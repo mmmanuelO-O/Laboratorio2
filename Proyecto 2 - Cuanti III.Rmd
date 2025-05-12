@@ -1,0 +1,129 @@
+---
+title: "Proyecto 2 - Regresión Logística y Multinomial - Latinobarómetro 2023"
+author: "Manuel López Arce - C34324"
+date: "2025-04-8"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    theme: cosmo
+    highlight: tango
+  word_document:
+    toc: yes
+---
+
+# **Aspectos Varios**
+
+1.  Instalar las librerías y cargar la base de datos, la cual corresponde a la del Latinobarómetro 2023
+
+```{r}
+library(dplyr)
+library(knitr)
+library(haven)
+library(ggplot2)
+library(stargazer)
+library(nnet)
+
+load("~/Desktop/Directorio R/F00017014-Latinobarometro_2023_Rdata_v1_0/Latinobarometro_2023_Esp_Rdata_v1_0.rdata")
+
+Latinobarometro2023 <- Latinobarometro_2023_Esp_v1_0
+```
+
+2.  Filtrado de valores negativos dentro de las variables - Se cuantifican con los valores negativos para identificar No Respondió / No Sabe
+
+Las variables se mostraran ahora y tambibién al momento de la interpetación, por lo que estas corresponden a las siguientes:
+
+-   REEEDUC.1 - Nivel educativo
+
+-   P11STGBS.A - Satisfacción con el funcionamiento de la democracia
+
+-   P11STGBS.B – Satisfacción con el funcionamiento de la economía
+
+-   SEXO - Sexo
+
+-   REEDAD - Edad de la persona
+
+-   P60ST - Corrupción ocurrida en los últimos 2 años
+
+-   P16ST - Panorama de ideología, de izquierda a derecha
+
+-   P15STGBS - Aprobación de la manera que gobierna el presidente
+
+-   S1A - Nivel de devoción hacía su religión
+
+-   P20STM - Apoyo a un régimen militar
+
+-   P19N - Tipo de sociedad: Más diversa o más conservadora
+
+2.  También durante este apartado se filtrará la base para únicamente utilizar los datos correspondientes a Costa Rica. La elección del país se da porque hay una facilidad práctica para interpretar el resultado.
+
+```{r}
+#Variables para la Regresión Logística
+LBFiltrado <- Latinobarometro2023 %>%
+  filter( REEEDUC.1>= 0, P11STGBS.B>= 0, sexo>= 0, reedad>=0, P60ST>=0, P16ST>=0, P15STGBS>=0, S1A>=0, P20STM>=0, P19N>=0, P11STGBS.A>=0, reedad>=0, P41ST.A>=0)
+
+
+LBCostaRica <- LBFiltrado%>% 
+  filter(idenpa == 188)
+```
+
+# Regresión Logística
+
+## **Primera Parte: Identificación de los supuestos del modelo**
+
+## **Segunda Parte: Ecuación Matemática**
+
+## **Tercera Parte: Tabla de Resultados - Regresión Logística**
+
+```{r}
+#Es para codificar 1 y 0, porque la variable original vienen 4 categorías al estilo de Escala de Likert, por lo que se unifican en "Satisfecho con la democracia" e "Insatisfecho con la democracia
+LBCostaRica <- LBCostaRica %>%
+  mutate(P11AModificada = ifelse(P11STGBS.A %in% c(1, 2), 1, 0))
+
+ModeloRL <- glm(P11AModificada ~ reedad + sexo + REEEDUC.1 + P11STGBS.B + P15STGBS + P60ST + P41ST.A, data = LBCostaRica, family = "binomial")
+summary(ModeloRL)
+
+#Era preocupante que la variable P11STGBS.B causara multicolinealidad, por lo que se ejecuta y se comprueba que no 
+library(car)
+vif(ModeloRL)
+
+```
+
+## **Cuarta Parte: Interpretación del modelo**
+
+## **Quinta Parte: Gráficos**
+
+## 
+
+# **Regresión Multinomial**
+
+## **Primera Parte: Identificación de los supuestos del modelo**
+
+## **Segunda Parte: Ecuación Matemática**
+
+## **Tercera Parte: Tabla de Resultados - Regresión Multinomial**
+
+```{r}
+#Para eliminar los valores negativos de las variables
+LBFiltrado <- Latinobarometro2023 %>%
+  filter( P10STGBS>= 0, S2>= 0, sexo>= 0, reedad>=0, REEEDUC.1>=0, P62N.13>=0, P21ST>=0, P16ST>=0, P35NA>=0)
+
+LBCostaRica <- LBCostaRica %>%
+  mutate(P10Modificada = as.factor(P10STGBS))
+
+```
+
+```{r}
+ModeloRM <- multinom(P10Modificada ~ reedad + sexo + REEEDUC.1 + P62N.13 + P21ST + P16ST + P35NA, data = LBCostaRica)
+
+
+
+stargazer(ModeloRM, type="text")
+
+```
+
+## **Cuarta Parte: Interpretación del Modelo**
+
+## **Quinta Parte: Gráficos**
+
+## 
