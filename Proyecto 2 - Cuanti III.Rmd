@@ -33,27 +33,27 @@ Latinobarometro2023 <- Latinobarometro_2023_Esp_v1_0
 
 Las variables se mostraran ahora y tambibién al momento de la interpetación, por lo que estas corresponden a las siguientes:
 
--   REEEDUC.1 - Nivel educativo
+REEEDUC.1 - Nivel educativo
 
--   P11STGBS.A - Satisfacción con el funcionamiento de la democracia
+P11STGBS.A - Satisfacción con el funcionamiento de la democracia
 
--   P11STGBS.B – Satisfacción con el funcionamiento de la economía
+P11STGBS.B – Satisfacción con el funcionamiento de la economía
 
--   SEXO - Sexo
+SEXO - Sexo
 
--   REEDAD - Edad de la persona
+REEDAD - Edad de la persona
 
--   P60ST - Corrupción ocurrida en los últimos 2 años
+P60ST - Corrupción ocurrida en los últimos 2 años
 
--   P16ST - Panorama de ideología, de izquierda a derecha
+P16ST - Panorama de ideología, de izquierda a derecha
 
--   P15STGBS - Aprobación de la manera que gobierna el presidente
+P15STGBS - Aprobación de la manera que gobierna el presidente
 
--   S1A - Nivel de devoción hacía su religión
+S1A - Nivel de devoción hacía su religión
 
--   P20STM - Apoyo a un régimen militar
+P20STM - Apoyo a un régimen militar
 
--   P19N - Tipo de sociedad: Más diversa o más conservadora
+P19N - Tipo de sociedad: Más diversa o más conservadora
 
 2.  También durante este apartado se filtrará la base para únicamente utilizar los datos correspondientes a Costa Rica. La elección del país se da porque hay una facilidad práctica para interpretar el resultado.
 
@@ -77,9 +77,9 @@ LBCostaRica <- LBFiltrado%>%
 ```{r}
 #Es para codificar 1 y 0, porque la variable original vienen 4 categorías al estilo de Escala de Likert, por lo que se unifican en "Satisfecho con la democracia" e "Insatisfecho con la democracia
 LBCostaRica <- LBCostaRica %>%
-  mutate(P11AModificada = ifelse(P11STGBS.A %in% c(1, 2), 1, 0))
+  mutate(satisfacción_democracia = ifelse(P11STGBS.A %in% c(1, 2), 1, 0))
 
-ModeloRL <- glm(P11AModificada ~ reedad + sexo + REEEDUC.1 + P11STGBS.B + P15STGBS + P60ST + P41ST.A, data = LBCostaRica, family = "binomial")
+ModeloRL <- glm(satisfacción_democracia ~ reedad + sexo + REEEDUC.1 + P11STGBS.B + P15STGBS + P60ST + P41ST.A, data = LBCostaRica, family = "binomial")
 summary(ModeloRL)
 
 #Era preocupante que la variable P11STGBS.B causara multicolinealidad, por lo que se ejecuta y se comprueba que no 
@@ -115,11 +115,13 @@ LBCostaRica <- LBCostaRica %>%
   mutate(apoyo_democracia = as.factor(P10STGBS)) #Le asigne un nombre para los graficos 
 
 ```
+#se puede eliminar luego, es solo para guiarme que es cada variable, estan en orden del modelo
+edad, sexo, educación, Nayib Bukele, Partidos politicos,Derecha-izquierda,Mejor forma de gobernar
+
+
 
 ```{r}
 ModeloRM <- multinom(apoyo_democracia ~ reedad + sexo + REEEDUC.1 + P62N.13 + P21ST + P16ST + P35NA, data = LBCostaRica)
-
-
 
 stargazer(ModeloRM, type="text")
 
@@ -129,4 +131,30 @@ stargazer(ModeloRM, type="text")
 
 ## **Quinta Parte: Gráficos**
 
-## 
+#Ejemplo para nombrar variables en multinomial:
+
+LBCostaRica$satisfaccion_democracia <- factor(LBCostaRica$satisfaccion_democracia,
+                                              levels = c(1, 2, 3, 4),
+                                              labels = c("Muy_satisfecho", "Algo_satisfecho", "Poco_satisfecho", "Nada_satisfecho"))
+
+#Labels de logistica, estan dentro de LBcostarica, con minuscula, también esta hecha dentro de la base filtrada que creaste:
+
+LBcostarica <- LBCostaRica %>%
+  rename(
+    nivel_educativo = REEEDUC.1,
+    satisfaccion_democracia = P11STGBS.A,
+    satisfaccion_economia = P11STGBS.B,
+    edad.1 = reedad,
+    percepcion_corrupcion = P60ST,
+    ideologia_izq_dcha = P16ST,
+    aprobacion_presidente = P15STGBS,
+    devocion_religiosa = S1A,
+    apoyo_regimen_militar = P20STM,
+    preferencia_tipo_sociedad = P19N,
+    participacion_politica =P41ST.A  
+  )
+
+#Regresion logistica
+ModeloRL.1 <-glm(satisfacción_democracia ~ edad.1 + sexo + nivel_educativo +  satisfaccion_economia + aprobacion_presidente + percepcion_corrupcion + participacion_politica, data = LBcostarica, family = "binomial")
+summary(ModeloRL.1)
+
