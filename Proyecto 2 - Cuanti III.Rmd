@@ -1,6 +1,6 @@
 ---
 title: "Proyecto 2 - Regresión Logística y Multinomial - Latinobarómetro 2023"
-author: "Manuel López Arce,C34324 Bianca Fonseca Vindas, C33026"
+author: "Manuel López Arce - C34324 y Bianca Fonseca Vindas - C33026"
 date: "2025-04-8"
 output:
   html_document:
@@ -24,43 +24,46 @@ library(ggplot2)
 library(stargazer)
 library(nnet)
 
-load("~/Desktop/Directorio R/F00017014-Latinobarometro_2023_Rdata_v1_0/Latinobarometro_2023_Esp_Rdata_v1_0.rdata")
+  load("~/Desktop/Directorio R/F00017014-Latinobarometro_2023_Rdata_v1_0/Latinobarometro_2023_Esp_Rdata_v1_0.rdata")
 
 Latinobarometro2023 <- Latinobarometro_2023_Esp_v1_0
 ```
 
 2.  Filtrado de valores negativos dentro de las variables - Se cuantifican con los valores negativos para identificar No Respondió / No Sabe
 
-Las variables se mostraran ahora y tambibién al momento de la interpetación, por lo que estas corresponden a las siguientes:
+Las variables se mostraran ahora y también al momento de la interpetación, por lo que estas corresponden a las siguientes:
 
-REEEDUC.1 - Nivel educativo
+-   Variable Dependiente
 
-P11STGBS.A - Satisfacción con el funcionamiento de la democracia
+    -   P11STGBS.A - Esta refiere a una valoración de la democracia
 
-P11STGBS.B – Satisfacción con el funcionamiento de la economía
+        -   Número 0: Insatisfacción con la democracia
 
-SEXO - Sexo
+        -   Número 1: Satisfacción con la democracia
 
-REEDAD - Edad de la persona
+-   Variables Independientes
 
-P60ST - Corrupción ocurrida en los últimos 2 años
+    -   Reedad - Edad Codificada
 
-P16ST - Panorama de ideología, de izquierda a derecha
+    -   Sexo - Género autopercibido de la persona
 
-P15STGBS - Aprobación de la manera que gobierna el presidente
+    -   REEEDUC.1 - Nivel educativo alcanzado
 
-S1A - Nivel de devoción hacía su religión
+    -   P11STGBS.B - Refiere a una valoración de la economía
 
-P20STM - Apoyo a un régimen militar
+    -   P15STGBS - Calificación de la manera que gobierna el presidente
 
-P19N - Tipo de sociedad: Más diversa o más conservadora
+    -   P60ST - Corrupción ocurrida en los últimos 2 años
 
-2.  También durante este apartado se filtrará la base para únicamente utilizar los datos correspondientes a Costa Rica. La elección del país se da porque hay una facilidad práctica para interpretar el resultado.
+    -   P41ST - Nivel de seguridad con la que el país protege derechos y libertades civiles
+
+-   También durante este apartado se filtrará la base para únicamente utilizar los datos correspondientes a Costa Rica. La elección del país se da porque hay una facilidad práctica para interpretar el resultado.
 
 ```{r}
 #Variables para la Regresión Logística
 LBFiltrado <- Latinobarometro2023 %>%
-  filter( REEEDUC.1>= 0, P11STGBS.B>= 0, sexo>= 0, reedad>=0, P60ST>=0, P16ST>=0, P15STGBS>=0, S1A>=0, P20STM>=0, P19N>=0, P11STGBS.A>=0, reedad>=0, P41ST.A>=0)
+  filter( P11STGBS.A>= 0, reedad>= 0, sexo>= 0, reedad>=0, REEEDUC.1>=0, P11STGBS.B>=0, P15STGBS>=0, P60ST>=0, P41ST.A>=0)
+
 
 LBCostaRica <- LBFiltrado%>% 
   filter(idenpa == 188)
@@ -70,16 +73,27 @@ LBCostaRica <- LBFiltrado%>%
 
 ## **Primera Parte: Identificación de los supuestos del modelo**
 
+***H0 - Hipótesis Nula***
+
+-   Las variables edad, género, nivel educativo, valoración de la economía, calificación del presidente, percepción de corrupción y percepción sobre la protección de derechos civiles **no tienen un efecto significativo** sobre la probabilidad de que una persona valore positivamente la democracia.
+
+***H1 - Hipótesis Alternativa***
+
+-   Las variables edad, género, nivel educativo, valoración de la economía, calificación del presidente, percepción de corrupción y percepción sobre la protección de derechos civiles **tienen un efecto significativo** sobre la probabilidad de que una persona valore positivamente la democracia.
+
 ## **Segunda Parte: Ecuación Matemática**
+
+1.  Logit(P11STGBS.A) = B0 + B1Reedad + B2Sexo + B3REEEDUC.1 + B4P11STGBS.B + B6P60ST + B6P41ST.A + Error Inobservado
+2.  Logit(ValoraciónDemocracia) = B0 + B1Edad + B2Sexo + B3NivelEducativo + B4ValoraciónEconomía + B5PercepciónCorrupción + B6SeguridadDerechosLibertades + Error Inobservado
 
 ## **Tercera Parte: Tabla de Resultados - Regresión Logística**
 
 ```{r}
 #Es para codificar 1 y 0, porque la variable original vienen 4 categorías al estilo de Escala de Likert, por lo que se unifican en "Satisfecho con la democracia" e "Insatisfecho con la democracia
 LBCostaRica <- LBCostaRica %>%
-  mutate(satisfacción_democracia = ifelse(P11STGBS.A %in% c(1, 2), 1, 0))
+  mutate(P11AModificada = ifelse(P11STGBS.A %in% c(1, 2), 1, 0))
 
-ModeloRL <- glm(satisfacción_democracia ~ reedad + sexo + REEEDUC.1 + P11STGBS.B + P15STGBS + P60ST + P41ST.A, data = LBCostaRica, family = "binomial")
+ModeloRL <- glm(P11AModificada ~ reedad + sexo + REEEDUC.1 + P11STGBS.B + P15STGBS + P60ST + P41ST.A, data = LBCostaRica, family = "binomial")
 summary(ModeloRL)
 
 #Era preocupante que la variable P11STGBS.B causara multicolinealidad, por lo que se ejecuta y se comprueba que no 
@@ -90,13 +104,71 @@ vif(ModeloRL)
 
 ## **Cuarta Parte: Interpretación del modelo**
 
+-   **Variable Edad - Reedad**
+
+    -   A medida que aumenta la edad de las personas encuestadas, la probablidad de estar satisfecho con la democracia aumenta. Sugiere que por cada aumento de unidad en la varible edad, la satisfacción aumenta en 0.36.
+
+    -   Es una variable con un alto valor estadístico
+
+-   **Variable Sexo - Sexo**
+
+    -   La diferenciación entre género no ejerce ninguna probabilidad significativa de estar satisfecho o insatisfecho con la democracia.
+
+    -   Es una variable estadísticamente poco significativa
+
+-   **Variable Educación - REEEDUC.1**
+
+    -   A medida que aumenta el nivel educativo de las personas encuestadas, la probabilidad de estar satisfecho con la democracia también aumenta.
+
+    -   Es una variable con un valor estadístico significativo.
+
+-   **Variable Valoración de la Economía - P11STGBS.B**
+
+    -   A medida que las personas valoran más positivamente la gestión de la economía, también incrementa la posibilidad de que esten más satisfechas con la democracia.
+
+    -   Es una variable con un alto valor estadístico
+
+-   **Variable Calificación Presidente - P15STGBS**
+
+    -   Las personas que aprueban la gestión presidencial, también tienen más posibilidades de estar más satisfechas con el funcionamiento de la democracia.
+
+    -   Es una variable con un valor estadístico significativo.
+
+-   **Variable Percepción de la Corrupción - P60ST**
+
+    -   No existe una probabilidad de aumentar o decrecer la satisfacción con la democracia, según percepciones acerca de la corrupción
+
+    -   Es una variable estadísticamente poco significativa
+
+-   **Variable Nivel de Seguridad con la que el país protege garantías civiles - P41ST.A**
+
+    -   A medida que la protección de las garantías civiles están menos protegidas por el país, auemtna la probabilidad de estar insatisfecho con la democracia.
+
+    -   Es una variable con un valor estadístico significativo.
+
 ## **Quinta Parte: Gráficos**
 
+1.  **Valoración de la Gestión Presidencial**
 
+```{r}
+ggplot(LBCostaRica, aes(x = P15STGBS, y = P11AModificada)) +
+  geom_point() + geom_smooth(method = "glm", color = '#2C3E50') +
+  theme_minimal() +
+  labs(
+    title = "Satisfacción con la Democracia y Valoración del mandato presidencial",
+    x = "Desprobación del mandato presidencial", y = "Mayor Satisfacción con la Democracia")
+```
 
+1.  **Valoración de la Gestión de la Economía**
 
-
-## 
+```{r}
+ggplot(LBCostaRica, aes(x = P11STGBS.B, y = P11AModificada)) +
+  geom_point() + geom_smooth(method = "glm", color = '#2C3E50') +
+  theme_minimal() +
+  labs(
+    title = "Satisfacción con la Democracia y Valoración del Gestión de la Economía",
+    x = "Mejor valoración de la Economía", y = "Mayor Satisfacción con la Democracia")
+```
 
 # **Regresión Multinomial**
 
@@ -112,16 +184,14 @@ LBFiltrado <- Latinobarometro2023 %>%
   filter( P10STGBS>= 0, S2>= 0, sexo>= 0, reedad>=0, REEEDUC.1>=0, P62N.13>=0, P21ST>=0, P16ST>=0, P35NA>=0)
 
 LBCostaRica <- LBCostaRica %>%
-  mutate(apoyo_democracia = as.factor(P10STGBS)) #Le asigne un nombre para los graficos 
+  mutate(P10Modificada = as.factor(P10STGBS))
 
 ```
-#se puede eliminar luego, es solo para guiarme que es cada variable, estan en orden del modelo
-edad, sexo, educación, Nayib Bukele, Partidos politicos,Derecha-izquierda,Mejor forma de gobernar
-
-
 
 ```{r}
-ModeloRM <- multinom(apoyo_democracia ~ reedad + sexo + REEEDUC.1 + P62N.13 + P21ST + P16ST + P35NA, data = LBCostaRica)
+ModeloRM <- multinom(P10Modificada ~ reedad + sexo + REEEDUC.1 + P62N.13 + P21ST + P16ST + P35NA, data = LBCostaRica)
+
+
 
 stargazer(ModeloRM, type="text")
 
@@ -131,30 +201,4 @@ stargazer(ModeloRM, type="text")
 
 ## **Quinta Parte: Gráficos**
 
-#Ejemplo para nombrar variables en multinomial:
-
-LBCostaRica$satisfaccion_democracia <- factor(LBCostaRica$satisfaccion_democracia,
-                                              levels = c(1, 2, 3, 4),
-                                              labels = c("Muy_satisfecho", "Algo_satisfecho", "Poco_satisfecho", "Nada_satisfecho"))
-
-#Labels de logistica, estan dentro de LBcostarica, con minuscula, también esta hecha dentro de la base filtrada que creaste:
-
-LBcostarica <- LBCostaRica %>%
-  rename(
-    nivel_educativo = REEEDUC.1,
-    satisfaccion_democracia = P11STGBS.A,
-    satisfaccion_economia = P11STGBS.B,
-    edad.1 = reedad,
-    percepcion_corrupcion = P60ST,
-    ideologia_izq_dcha = P16ST,
-    aprobacion_presidente = P15STGBS,
-    devocion_religiosa = S1A,
-    apoyo_regimen_militar = P20STM,
-    preferencia_tipo_sociedad = P19N,
-    participacion_politica =P41ST.A  
-  )
-
-#Regresion logistica
-ModeloRL.1 <-glm(satisfacción_democracia ~ edad.1 + sexo + nivel_educativo +  satisfaccion_economia + aprobacion_presidente + percepcion_corrupcion + participacion_politica, data = LBcostarica, family = "binomial")
-summary(ModeloRL.1)
-
+## 
