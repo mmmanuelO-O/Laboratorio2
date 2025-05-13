@@ -73,11 +73,11 @@ LBCostaRica <- LBFiltrado%>%
 
 ## **Primera Parte: Identificación de los supuestos del modelo**
 
-***H0 - Hipótesis Nula***
+H₀ ***- Hipótesis Nula***
 
 -   Las variables edad, género, nivel educativo, valoración de la economía, calificación del presidente, percepción de corrupción y percepción sobre la protección de derechos civiles **no tienen un efecto significativo** sobre la probabilidad de que una persona valore positivamente la democracia.
 
-***H1 - Hipótesis Alternativa***
+H₁***- Hipótesis Alternativa***
 
 -   Las variables edad, género, nivel educativo, valoración de la economía, calificación del presidente, percepción de corrupción y percepción sobre la protección de derechos civiles **tienen un efecto significativo** sobre la probabilidad de que una persona valore positivamente la democracia.
 
@@ -120,7 +120,7 @@ vif(ModeloRL)
 
     -   A medida que aumenta el nivel educativo de las personas encuestadas, la probabilidad de estar satisfecho con la democracia también aumenta.
 
-    -   Es una variable con un valor estadístico significativo.
+    -   Es una variable con un valor estadístico cerca de ser significativo, al tener 0.058, por lo que se encuentra muy cerca del umbral.
 
 -   **Variable Valoración de la Economía - P11STGBS.B**
 
@@ -170,28 +170,82 @@ ggplot(LBCostaRica, aes(x = P11STGBS.B, y = P11AModificada)) +
     x = "Mejor valoración de la Economía", y = "Mayor Satisfacción con la Democracia")
 ```
 
+1.  **Garantías Civiles**
+
+```{r}
+ggplot(LBCostaRica, aes(x = P41ST.A, y = P11AModificada)) +
+  geom_point() + geom_smooth(method = "glm", color = '#2C3E50') +
+  theme_minimal() +
+  labs(
+    title = "Satisfacción con la Democracia y Protección de Garantías Civiles",
+    x = "Insuficiente tutela de Garantías Civiles", y = "Mayor Satisfacción con la Democracia")
+```
+
 # **Regresión Multinomial**
+
+## **Aspectos Varios** 
+
+```{r}
+#Filtrado de Variables para la Regresión Multinomial
+LBFiltrado <- Latinobarometro2023 %>%
+  filter( P10STGBS>= 0, reedad>= 0, sexo>= 0, REEEDUC.1>=0, P62N.13>=0, P21ST>=0, P16ST>=0, P35NA>=0)
+
+LBCostaRica <- LBCostaRica %>%
+  mutate(P10Modificada = case_when(
+    P10STGBS == 1 ~ 1,
+    P10STGBS == 2 ~ 2,
+    P10STGBS == 3 ~ 3,
+    TRUE ~ NA_real_
+  )) %>%
+  filter(!is.na(P10Modificada))
+
+
+LBCostaRica <- LBCostaRica %>%
+  mutate(P10Modificada = as.factor(P10STGBS))
+```
+
+Las variables se mostraran ahora y también al momento de la interpetación, por lo que estas corresponden a las siguientes:
+
+-   Variable Dependiente
+
+    -   P10STGBS - Esta refiere cual tipo de gobierno es preferible
+
+        -   Número 1: La democracia es preferible
+
+        -   Número 2: En algunas circunstancias un gobierno autoritario es preferible
+
+        -   Número 3: Indiferente con la forma de gobierno
+
+-   Variables Independientes
+
+    -   Reedad- Edad 
+
+    -   Sexo - Sexo 
+
+    -   REEEDUC.1- Nivel educativo 
+
+    -   P62N.13- Calificación de la gestión del presidente Nayib Bukele 
+
+    -   P21ST -   La necesidad o no de los partidos políticos en la democracia
+
+    -   P16ST - Ideología política en terminos de izquieda o derecha
+
+    -   P35NA- Preferencia en la forma de gobernar
 
 ## **Primera Parte: Identificación de los supuestos del modelo**
 
-## **Segunda Parte: Ecuación Matemática**
+H₀ ***- Hipótesis Nula***
+
+-   Las variables edad, sexo, nivel educativo, aprobación de la gestión de Nayib Bukele, la relevancia de los partidos políticos en la democracia, la ideología política y la percepción sobre la mejor forma de gobernar **no tienen un en efecto significativo** en la preferencia del tipo de gobierno.
+
+H₁***- Hipótesis Alternativa***
+
+-   Las variables edad, sexo, nivel educativo, aprobación de la gestión de Nayib Bukele, la relevancia de los partidos políticos en la democracia, la ideología política y la percepción sobre la mejor forma de gobernar **tienen un en efecto significativo** en la preferencia del tipo de gobierno.
 
 ## **Tercera Parte: Tabla de Resultados - Regresión Multinomial**
 
 ```{r}
-#Para eliminar los valores negativos de las variables
-LBFiltrado <- Latinobarometro2023 %>%
-  filter( P10STGBS>= 0, S2>= 0, sexo>= 0, reedad>=0, REEEDUC.1>=0, P62N.13>=0, P21ST>=0, P16ST>=0, P35NA>=0)
-
-LBCostaRica <- LBCostaRica %>%
-  mutate(P10Modificada = as.factor(P10STGBS))
-
-```
-
-```{r}
 ModeloRM <- multinom(P10Modificada ~ reedad + sexo + REEEDUC.1 + P62N.13 + P21ST + P16ST + P35NA, data = LBCostaRica)
-
-
 
 stargazer(ModeloRM, type="text")
 
@@ -199,6 +253,32 @@ stargazer(ModeloRM, type="text")
 
 ## **Cuarta Parte: Interpretación del Modelo**
 
-## **Quinta Parte: Gráficos**
+-   **Variable Edad - Reedad**
 
-## 
+    -   A medida que aumenta la edad de las personas encuestadas, decrecre la posibilidad de que se encuentren a favor de un gobierno autoritario o se muesten indeferentes, en comparación con quienes prefieren la democracia
+
+    -   Ambas alternativas, cuentan con altos valores estadísticos
+
+-   **Variable Sexo - Sexo**
+
+    -   La diferencia entre género no cuenta con un valor estadísticamente significativo para predecir la probabilidad de que las personas prefieran un gobierno autoritario o se muestern indiferentes por sobre un gobierno democrático
+
+-   **Variable Educación - REEEDUC.1**
+
+    -   Un aumento en el nivel educativo si tiene un efecto significativo en reducir la probabilidad de que la persona se encuentre indiferente ante la forma de gobierno. No obstante no es capaz de predecir la preferencia sobre un gobierno autoritario.
+
+-   **Variable Valoración de Nayib Bukele - P62N.13**
+
+    -   A medida que aumenta la calificación positiva a la gestión de Bukele, también aumenta la probabilidad de preferir un gobierno autoritario o de mostrarse indiferente antes de elegir una forma de gobierno basada en la democracia.
+
+-   **Variable Necesidad de los Partidos Políticos en la Democracia - P21ST**
+
+    -   Las personas que creen que los partidos politicos suelen ser menos necesarios, también tienden a prefereir a un gobierno autoritario. No obstante no logra explicar la indiferencia.
+
+-   **Variable Ideología \~ Izq o Der - P16ST**
+
+    -   Estar alineado más con una ideología cercana a la derecha, tiende a aumentar la posibilidad de elegir a un gobierno autoritario. No obstante no logra explicar la indiferencia
+
+-   **Variable Forma de Gobernar - P35NA**
+
+    -   La diferencia entre las formas de gobernar no cuenta con un valor estadísticamente significativo para predecir la probabilidad de que las personas prefieran un gobierno autoritario o se muestern indiferentes por sobre un gobierno democrático.
