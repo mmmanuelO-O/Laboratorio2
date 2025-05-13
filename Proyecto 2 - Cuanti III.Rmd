@@ -1,6 +1,6 @@
 ---
 title: "Proyecto 2 - Regresión Logística y Multinomial - Latinobarómetro 2023"
-author: "Manuel López Arce - C34324"
+author: "Manuel López Arce,C34324 Bianca Fonseca Vindas, C33026"
 date: "2025-04-8"
 output:
   html_document:
@@ -62,7 +62,6 @@ Las variables se mostraran ahora y tambibién al momento de la interpetación, p
 LBFiltrado <- Latinobarometro2023 %>%
   filter( REEEDUC.1>= 0, P11STGBS.B>= 0, sexo>= 0, reedad>=0, P60ST>=0, P16ST>=0, P15STGBS>=0, S1A>=0, P20STM>=0, P19N>=0, P11STGBS.A>=0, reedad>=0, P41ST.A>=0)
 
-
 LBCostaRica <- LBFiltrado%>% 
   filter(idenpa == 188)
 ```
@@ -93,6 +92,10 @@ vif(ModeloRL)
 
 ## **Quinta Parte: Gráficos**
 
+
+
+
+
 ## 
 
 # **Regresión Multinomial**
@@ -109,12 +112,12 @@ LBFiltrado <- Latinobarometro2023 %>%
   filter( P10STGBS>= 0, S2>= 0, sexo>= 0, reedad>=0, REEEDUC.1>=0, P62N.13>=0, P21ST>=0, P16ST>=0, P35NA>=0)
 
 LBCostaRica <- LBCostaRica %>%
-  mutate(P10Modificada = as.factor(P10STGBS))
+  mutate(apoyo_democracia = as.factor(P10STGBS)) #Le asigne un nombre para los graficos 
 
 ```
 
 ```{r}
-ModeloRM <- multinom(P10Modificada ~ reedad + sexo + REEEDUC.1 + P62N.13 + P21ST + P16ST + P35NA, data = LBCostaRica)
+ModeloRM <- multinom(apoyo_democracia ~ reedad + sexo + REEEDUC.1 + P62N.13 + P21ST + P16ST + P35NA, data = LBCostaRica)
 
 
 
